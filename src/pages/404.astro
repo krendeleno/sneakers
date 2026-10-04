@@ -1,0 +1,56 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import BaseLayout from '@/app/layouts/BaseLayout.astro';
+import '@/entities/shoe/ui/shoebox.css';
+
+// Locale isn't known at build time for a static 404 — render English, then a tiny inline script
+// switches to Russian if the path that 404'd was under /ru/ (Astro i18n routing, `prefixDefaultLocale: false`).
+const catalogEn = getRelativeLocaleUrl('en', '');
+const catalogRu = getRelativeLocaleUrl('ru', '');
+---
+
+<BaseLayout title="404 — Pair not found" noindex>
+  <div class="mx-auto max-w-xs py-12 text-center">
+    {/* Empty shelf: a single ghost shoebox, same dashed "wish" look as the catalog wall */}
+    <div class="shoebox" data-status="wish" aria-hidden="true">
+      <div class="shoebox-box">
+        <div class="shoebox-side"></div>
+        <div class="shoebox-tissue"></div>
+        <div class="shoebox-lid"></div>
+        <div class="shoebox-body">
+          <div class="shoebox-label">
+            <div class="shoebox-thumb flex items-center justify-center text-2xl">👻</div>
+            <div class="shoebox-info">
+              <span class="shoebox-brand">404</span>
+              <span class="shoebox-name" data-i18n="en">Pair not found</span>
+              <span class="shoebox-name" data-i18n="ru" hidden>Пара не найдена</span>
+              <span class="shoebox-colorway" data-i18n="en">Nothing on this shelf</span>
+              <span class="shoebox-colorway" data-i18n="ru" hidden>На этой полке пусто</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="mt-10 text-sm text-muted-foreground">
+      <span data-i18n="en">That shoebox isn't on the shelf.</span>
+      <span data-i18n="ru" hidden>Такой коробки нет на полке.</span>
+    </p>
+    <a
+      id="back-link"
+      href={catalogEn}
+      class="mt-4 inline-block font-medium text-primary underline underline-offset-4 hover:no-underline"
+    >
+      <span data-i18n="en">Back to the catalog</span>
+      <span data-i18n="ru" hidden>Назад в коллекцию</span>
+    </a>
+  </div>
+  <script is:inline define:vars={{ catalogRu }}>
+    if (location.pathname.startsWith(catalogRu)) {
+      document.documentElement.lang = 'ru';
+      document.title = '404 — Пара не найдена';
+      document.getElementById('back-link').href = catalogRu;
+      document.querySelectorAll('[data-i18n="en"]').forEach((el) => (el.hidden = true));
+      document.querySelectorAll('[data-i18n="ru"]').forEach((el) => (el.hidden = false));
+    }
+  </script>
+</BaseLayout>

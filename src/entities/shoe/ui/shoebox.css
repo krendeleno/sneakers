@@ -1,0 +1,693 @@
+/*
+  Catalog card as the end of a shoebox (see ShoeCard.tsx). The box is a preserve-3d stack:
+  - .shoebox-lid   — top ~20%, overhangs the body by 3px per side, volt block on its left end;
+  - .shoebox-body  — the rest, carries the label sticker;
+  - .shoebox-side  — the left side face, rotated 90deg so it's edge-on (invisible) until the box turns on hover;
+  - .shoebox-tissue — white tissue paper between lid and body, peeks out when the lid lifts;
+  - .shoebox-box::after — the light falling on the box end, --shoebox-light (backgrounds; set by the wall);
+  - .shoebox::before — the drop shadow on the wall behind a pulled-out box.
+  Wishlist pairs (data-status="wish") are "ghost" boxes: translucent faces with a dashed outline.
+  --box-color (brand signature, see lib/box-color.ts) wins over the wall's graphite --shoebox-shade.
+*/
+:root {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.shoebox {
+  --box: var(--box-color, var(--shoebox-shade, #1c1c1c));
+  --lid: color-mix(in srgb, var(--box), #fff 5%);
+  /* Brand printed on the lid: a pale tint of the box, >= 5:1 against every lid color */
+  --lid-ink: color-mix(in srgb, var(--box), #fff 75%);
+  --edge: #0b0b0b;
+  position: relative;
+  display: block;
+  aspect-ratio: 5 / 3;
+  perspective: 900px;
+  /* Viewer stands a bit to the left, so the turned-out box shows its left side face. */
+  perspective-origin: -25% 40%;
+  container-type: inline-size;
+  border-radius: 3px;
+  outline: none;
+}
+
+.shoebox:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+}
+
+.shoebox-box {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-style: preserve-3d;
+}
+
+/* Over lid (with its 3px overhang) and body, just in front of the lifted lid: rides along with the box. */
+.shoebox-box::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0 -3px;
+  border-radius: 3px;
+  background: var(--shoebox-light, none);
+  transform: translateZ(3px);
+  pointer-events: none;
+}
+
+/* In the wall's plane, so it stays on the wall below the box as it comes out; shown on hover. */
+.shoebox::before {
+  content: "";
+  position: absolute;
+  inset: 14% 1% -5% 5%;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.6);
+  filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shoebox-lid,
+.shoebox-body,
+.shoebox-side {
+  position: absolute;
+  display: block;
+  background-color: var(--box);
+}
+
+/* Cardboard grain: fractal noise blended very faintly over every face. */
+.shoebox-lid::after,
+.shoebox-body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--grain);
+  mix-blend-mode: overlay;
+  opacity: 0.09;
+  pointer-events: none;
+}
+
+.shoebox-lid {
+  z-index: 2;
+  top: 0;
+  inset-inline: -3px;
+  height: 20%;
+  border-radius: 3px 3px 1px 1px;
+  background-color: var(--lid);
+  background-image: linear-gradient(to bottom, rgb(255 255 255 / 0.05), transparent 40%);
+  border-bottom: 2px solid var(--edge);
+  box-shadow: 0 2px 3px rgb(0 0 0 / 0.45);
+}
+
+/* Volt block on the lid's end, like a brand stripe printed on the box. */
+.shoebox-lid::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 16%;
+  border-radius: 3px 0 0 1px;
+  background: var(--primary);
+  box-shadow: inset -2px 0 0 color-mix(in srgb, var(--primary), #000 25%);
+}
+
+.shoebox-lid-brand {
+  position: absolute;
+  right: 4%;
+  top: 50%;
+  translate: 0 -50%;
+  color: var(--lid-ink);
+  font-size: clamp(0.625rem, 3.2cqw, 0.8125rem);
+  font-weight: 600;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.22em;
+  white-space: nowrap;
+}
+
+.shoebox-body {
+  inset: 20% 0 0;
+  border-radius: 0 0 3px 3px;
+  /* Soft shadow pooling at the bottom edge + the gap under the lid */
+  box-shadow:
+    inset 0 -10px 14px -8px rgb(0 0 0 / 0.55),
+    inset 0 6px 6px -4px rgb(0 0 0 / 0.5),
+    0 6px 10px -6px rgb(0 0 0 / 0.6);
+}
+
+.shoebox-side {
+  top: 0;
+  left: 0;
+  width: 140px;
+  height: 100%;
+  transform-origin: left center;
+  transform: rotateY(90deg);
+  opacity: 0;
+  /* Faces away from the overhead light: a darker shade of the box, deepening toward the wall. */
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--lid), #000 30%) 0 20%,
+      var(--edge) 20% calc(20% + 2px),
+      transparent calc(20% + 2px)
+    ),
+    linear-gradient(to right, color-mix(in srgb, var(--box), #000 35%), color-mix(in srgb, var(--box), #000 60%));
+}
+
+.shoebox-tissue {
+  position: absolute;
+  z-index: 1;
+  top: calc(20% - 7px);
+  inset-inline: 3px;
+  height: 9px;
+  transform: translateZ(-1px);
+  opacity: 0;
+  background:
+    repeating-linear-gradient(100deg, transparent 0 7px, rgb(0 0 0 / 0.07) 7px 9px, transparent 9px 15px),
+    linear-gradient(to bottom, #fbfbf8, #dcdcd6);
+}
+
+/*
+  Label sticker: thumbnail | info | vertical barcode. --sticker-tilt and --sticker-age (0 crisp … 1 yellowed) come
+  from lib/sticker.ts: older pairs' paper is warmer and more worn. Secondary ink stays >= 4.5:1 in the worst case: the
+  most aged paper on a ghost box in the darkest corner of the wall (wall-light.css), grain included.
+*/
+.shoebox-label {
+  --paper: color-mix(in srgb, #f2f2ef, #e8dab4 calc(var(--sticker-age, 0) * 100%));
+  --ink-2: #33332f;
+  position: absolute;
+  inset: 9% 4.5%;
+  display: flex;
+  gap: 0.6rem;
+  align-items: stretch;
+  padding: 0.45rem;
+  border-radius: 2px;
+  rotate: var(--sticker-tilt, 0deg);
+  background: var(--paper);
+  color: #121212;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.6) inset,
+    /* Worn, browned edges on old paper */ inset 0 0 calc(var(--sticker-age, 0) * 10px)
+    rgb(140 105 40 / calc(var(--sticker-age, 0) * 0.35)),
+    0 1px 2px rgb(0 0 0 / 0.5);
+}
+
+/* Paper grain, heavier on old stickers */
+.shoebox-label::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--grain);
+  mix-blend-mode: multiply;
+  opacity: calc(0.06 + var(--sticker-age, 0) * 0.12);
+  pointer-events: none;
+}
+
+.shoebox-thumb {
+  /* shoe-<id>: morphs into the shoe page's hero */
+  view-transition-name: var(--shoebox-poster);
+  flex: none;
+  height: 100%;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  object-fit: cover;
+  background: #121212;
+}
+
+.shoebox-thumb[data-empty] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgb(18 18 18 / 0.3);
+  background: color-mix(in srgb, var(--paper), #000 5%);
+  color: rgb(18 18 18 / 0.3);
+}
+
+.shoebox-silhouette {
+  width: 72%;
+}
+
+.shoebox-info {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.1rem;
+  line-height: 1.15;
+}
+
+.shoebox-brand {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.16em;
+  color: var(--ink-2);
+}
+
+.shoebox-name {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: clamp(0.8125rem, 4.4cqw, 1rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.shoebox-colorway {
+  overflow: hidden;
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.shoebox-size {
+  overflow: hidden;
+  margin-top: auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  /* Never runs into the barcode, whatever the box width */
+  text-overflow: ellipsis;
+}
+
+.shoebox-size > span:first-child {
+  margin-right: 0.15rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+  color: var(--ink-2);
+}
+
+.shoebox-info [data-slot="badge"] {
+  position: absolute;
+  /* A tag stuck over the label: above the barcode and its scan line */
+  z-index: 3;
+  top: -0.55rem;
+  right: -0.4rem;
+  rotate: 4deg;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+}
+
+.shoebox-barcode {
+  position: relative;
+  display: flex;
+  flex: none;
+  gap: 0.2rem;
+  align-items: stretch;
+}
+
+.shoebox-barcode svg {
+  width: 1.1rem;
+  height: 100%;
+  fill: #121212;
+}
+
+.shoebox-barcode > span {
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  font-family: ui-monospace, monospace;
+  font-size: 0.5625rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: #3a3a36;
+}
+
+/* Scanner sweep (see the motion media queries below): a volt line with a soft glow, idle = invisible. */
+.shoebox-barcode::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0 -3px;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--primary) 35%, transparent) 35%,
+      var(--primary) 46% 54%,
+      color-mix(in srgb, var(--primary) 35%, transparent) 65%,
+      transparent
+    )
+    0 -12px / 100% 12px no-repeat;
+  filter: drop-shadow(0 0 3px var(--primary));
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes barcode-scan {
+  0% {
+    opacity: 0;
+    background-position-y: -12px;
+  }
+
+  12%,
+  88% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    background-position-y: calc(100% + 12px);
+  }
+}
+
+/* The article number "reads" as the line leaves the code. */
+@keyframes barcode-read {
+  0%,
+  80%,
+  90% {
+    color: #3a3a36;
+  }
+
+  85%,
+  95%,
+  100% {
+    color: #121212;
+  }
+}
+
+/* Large sticker: the shoe page's info panel, the box label up close. */
+.shoebox-label[data-size="lg"] {
+  position: relative;
+  inset: auto;
+  max-width: 30rem;
+  gap: 1.25rem;
+  padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.6) inset,
+    inset 0 0 calc(var(--sticker-age, 0) * 18px) rgb(140 105 40 / calc(var(--sticker-age, 0) * 0.35)),
+    0 2px 4px rgb(0 0 0 / 0.45),
+    0 18px 40px -16px rgb(0 0 0 / 0.8);
+}
+
+.shoebox-label[data-size="lg"] .shoebox-info {
+  gap: 0.35rem;
+}
+
+.shoebox-label[data-size="lg"] .shoebox-brand {
+  font-size: 0.875rem;
+}
+
+.shoebox-label[data-size="lg"] .shoebox-name {
+  /* The page heading: the whole name, no clamp */
+  display: block;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.shoebox-label[data-size="lg"] .shoebox-colorway {
+  font-size: 0.875rem;
+  white-space: normal;
+}
+
+.shoebox-label[data-size="lg"] .shoebox-size {
+  margin-top: 0.75rem;
+  font-size: 1.125rem;
+}
+
+.shoebox-label[data-size="lg"] .shoebox-size {
+  white-space: normal;
+}
+
+/* If the size wraps, the foot length moves to the next line as a whole */
+.shoebox-label[data-size="lg"] .shoebox-size-value,
+.shoebox-label[data-size="lg"] .shoebox-foot {
+  white-space: nowrap;
+}
+
+.shoebox-label[data-size="lg"] .shoebox-size > span:first-child {
+  font-size: 0.8125rem;
+}
+
+/* No fixed height to stretch into here (the svg's tall viewBox would set it): the bars fill the label's height. */
+.shoebox-label[data-size="lg"] .shoebox-barcode {
+  padding-left: 2.2rem;
+}
+
+.shoebox-label[data-size="lg"] .shoebox-barcode svg {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 2rem;
+}
+
+.shoebox-label[data-size="lg"] .shoebox-barcode > span {
+  font-size: 0.6875rem;
+}
+
+.shoebox-label[data-size="lg"] [data-slot="badge"] {
+  top: -0.75rem;
+  right: -0.6rem;
+  font-size: 0.875rem;
+}
+
+/* "Where to buy" as a volt stamp on the sticker */
+.shoebox-stamp {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  margin-top: 1rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 3px;
+  rotate: -2deg;
+  background: var(--primary);
+  color: #121212;
+  outline: 1.5px dashed rgb(18 18 18 / 0.55);
+  outline-offset: -5px;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+  transition:
+    rotate 200ms,
+    scale 200ms,
+    box-shadow 200ms;
+}
+
+.shoebox-stamp:hover {
+  rotate: 0deg;
+  scale: 1.04;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.35);
+}
+
+.shoebox-stamp:focus-visible {
+  outline: 2px solid #121212;
+  outline-offset: 3px;
+}
+
+/* Small boxes: drop the secondary bits so the label stays legible. */
+@container (width < 460px) {
+  /* "39 RU · 40 EU · 25 cm" would run into the barcode: keep just the size (the catalog header has the foot length) */
+  .shoebox-foot {
+    display: none;
+  }
+}
+
+@container (width < 320px) {
+  .shoebox-barcode {
+    display: none;
+  }
+}
+
+@container (width < 250px) {
+  .shoebox-colorway,
+  .shoebox-lid-brand {
+    display: none;
+  }
+}
+
+/* Ghost boxes: wishlist pairs that aren't on the shelf yet. */
+.shoebox[data-status="wish"] {
+  --lid: color-mix(in srgb, var(--box) 55%, transparent);
+  /* Outline tinted by the brand color */
+  --ghost-edge: color-mix(in srgb, color-mix(in srgb, var(--box), #fff 45%) 60%, transparent);
+}
+
+.shoebox[data-status="wish"] .shoebox-body,
+.shoebox[data-status="wish"] .shoebox-lid {
+  border: 1px dashed var(--ghost-edge);
+  background-color: color-mix(in srgb, var(--box) 40%, transparent);
+  box-shadow: none;
+}
+
+.shoebox[data-status="wish"] .shoebox-body {
+  border-top: none;
+}
+
+.shoebox[data-status="wish"] .shoebox-lid::before {
+  inset-block: 3px;
+  left: 3px;
+  border: 1px dashed var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  box-shadow: none;
+}
+
+.shoebox[data-status="wish"] .shoebox-label {
+  opacity: 0.9;
+}
+
+/* Same ghost tint as the front, a shade darker; its front edge is the body's own dashed edge. */
+.shoebox[data-status="wish"] .shoebox-side {
+  border: 1px dashed var(--ghost-edge);
+  border-left: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, color-mix(in srgb, var(--box), #000 30%) 55%, transparent) 0 20%,
+    var(--ghost-edge) 20% calc(20% + 1px),
+    color-mix(in srgb, color-mix(in srgb, var(--box), #000 30%) 40%, transparent) calc(20% + 1px)
+  );
+}
+
+/* A ghost's shadow shows through it: keep it faint. */
+.shoebox[data-status="wish"]::before {
+  background: rgb(0 0 0 / 0.35);
+}
+
+/*
+  Re-shelving: the catalog sets data-reshelving on <html> only for the duration of a same-page view
+  transition (sort/filter change). Boxes then get their own names, so the remaining ones glide to their new
+  slots while removed ones are pulled off the shelf and returning ones slide back in. Outside of it boxes
+  stay unnamed and the card → page morph keeps only the poster (shoe-<id>).
+*/
+[data-reshelving] .shoebox {
+  view-transition-name: var(--shoebox-name);
+  view-transition-class: shoebox;
+}
+
+/* The poster rides inside its box's snapshot while re-shelving. */
+[data-reshelving] .shoebox-thumb {
+  view-transition-name: none;
+}
+
+::view-transition-group(.shoebox) {
+  animation-duration: 450ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Page itself doesn't cross-fade: controls just switch, only the named pieces animate. */
+[data-reshelving]::view-transition-old(root) {
+  animation: none;
+  opacity: 0;
+}
+
+[data-reshelving]::view-transition-new(root) {
+  animation: none;
+}
+
+/* A box that stays on the wall only moves: no old/new cross-fade (it would blink). */
+::view-transition-old(.shoebox) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(.shoebox) {
+  animation: none;
+}
+
+/* Old-only = the box left the wall; new-only = it came back. (`:not(:only-child)` isn't allowed here.) */
+::view-transition-old(.shoebox):only-child {
+  opacity: 1;
+  animation: shoebox-pull 300ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(.shoebox):only-child {
+  animation: shoebox-pull 300ms cubic-bezier(0, 0, 0.2, 1) reverse both;
+}
+
+@keyframes shoebox-pull {
+  to {
+    opacity: 0;
+    transform: translateY(-14%) scale(0.92);
+  }
+}
+
+/* Pull the box out of the wall: toward the viewer, turned to show its side, lid lifting off the tissue. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .shoebox-box,
+  .shoebox-lid {
+    transition:
+      transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 450ms ease;
+  }
+
+  .shoebox::before,
+  .shoebox-box::after {
+    transition: opacity 450ms ease;
+  }
+
+  /* Pulled out into the light: the wall's shading lifts off it and its shadow appears on the wall. */
+  .shoebox:hover::before,
+  .shoebox:focus-visible::before {
+    opacity: 1;
+  }
+
+  .shoebox:hover .shoebox-box::after,
+  .shoebox:focus-visible .shoebox-box::after {
+    opacity: 0;
+  }
+
+  .shoebox:hover,
+  .shoebox:focus-visible {
+    z-index: 10;
+  }
+
+  .shoebox:hover .shoebox-box,
+  .shoebox:focus-visible .shoebox-box {
+    transform: translateZ(36px) translateY(-3px) rotateY(13deg);
+  }
+
+  .shoebox-tissue,
+  .shoebox-side {
+    transition: opacity 150ms;
+  }
+
+  .shoebox:hover .shoebox-tissue,
+  .shoebox:focus-visible .shoebox-tissue,
+  .shoebox:hover .shoebox-side,
+  .shoebox:focus-visible .shoebox-side {
+    opacity: 1;
+  }
+
+  /* Pulled out into the light: the lid's top edge catches a faint volt rim. */
+  .shoebox:hover .shoebox-lid,
+  .shoebox:focus-visible .shoebox-lid {
+    transform: translateY(-6px) translateZ(2px);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--primary) 55%, transparent),
+      0 -3px 10px -4px color-mix(in srgb, var(--primary) 40%, transparent),
+      0 2px 3px rgb(0 0 0 / 0.45);
+  }
+
+  .shoebox:hover .shoebox-barcode::before,
+  .shoebox:focus-visible .shoebox-barcode::before {
+    animation: barcode-scan 600ms ease-in-out both;
+  }
+
+  .shoebox:hover .shoebox-barcode > span,
+  .shoebox:focus-visible .shoebox-barcode > span {
+    animation: barcode-read 600ms both;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The shoe page's sticker gets scanned once, right as the page comes in. */
+  .shoebox-label[data-size="lg"] .shoebox-barcode::before {
+    animation: barcode-scan 700ms ease-in-out both;
+  }
+
+  .shoebox-label[data-size="lg"] .shoebox-barcode > span {
+    animation: barcode-read 700ms both;
+  }
+}
+
+/* No motion: just mark the hovered box. */
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  .shoebox:hover .shoebox-body {
+    outline: 1px solid var(--muted-foreground);
+  }
+}

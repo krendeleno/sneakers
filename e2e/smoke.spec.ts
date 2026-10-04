@@ -1,0 +1,162 @@
+import { expect, type Page, test } from '@playwright/test';
+
+// Pair count printed on a status tab: the number its accessible name ends with ("Wishlist 3").
+async function tabCount(page: Page, name: RegExp) {
+  const text = await page.getByRole('tab', { name }).textContent();
+  return Number(text?.match(/\d+$/)?.[0]);
+}
+
+test('каталог фильтруется и состояние уходит в URL', async ({ page }) => {
+  await page.goto('./');
+
+  await expect(page.getByRole('heading', { name: 'My collection' })).toBeVisible();
+  const cards = page.getByTestId('shoe-card');
+  await expect(cards).toHaveCount(await tabCount(page, /Collection/));
+
+  await page.waitForSelector('astro-island:not([ssr])');
+  await page.getByRole('tab', { name: /Wishlist/ }).click();
+  await expect(page).toHaveURL(/status=wish/);
+  const wishCount = await tabCount(page, /Wishlist/);
+  await expect(cards).toHaveCount(wishCount);
+
+  const nike = page.getByRole('toolbar', { name: 'Brand' }).getByRole('button', { name: 'Nike' });
+  await nike.click();
+  await expect(nike).toHaveAttribute('aria-pressed', 'true');
+  await expect(page).toHaveURL(/brand=Nike/);
+  await expect(cards.first()).toBeVisible();
+  await expect(cards.filter({ hasNotText: 'Nike' })).toHaveCount(0);
+
+  await nike.click();
+  await expect(cards).toHaveCount(wishCount);
+
+  await page.getByRole('combobox', { name: 'Year' }).click();
+  await page.getByRole('option', { name: '1982' }).click();
+  await expect(page).toHaveURL(/year=1982/);
+  await expect(cards.first()).toBeVisible();
+  await expect(cards.filter({ hasNotText: '1982' })).toHaveCount(0);
+});
+
+test('сортировка по бренду переставляет коробки и уходит в URL', async ({ page }) => {
+  await page.goto('./?status=wish');
+  await page.waitForSelector('astro-island:not([ssr])');
+
+  const brands = page.getByTestId('shoe-card').locator('.shoebox-brand');
+  await expect(brands.first()).toBeVisible();
+
+  await page.getByRole('radio', { name: 'Brand' }).click();
+  await expect(page).toHaveURL(/sort=brand/);
+  const byBrand = await brands.allTextContents();
+  expect(byBrand).toEqual(byBrand.toSorted((a, b) => a.localeCompare(b)));
+  expect(byBrand.length).toBe(await tabCount(page, /Wishlist/));
+
+  // The sort survives switching tabs; the default one isn't written to the URL.
+  await page.getByRole('tab', { name: /Collection/ }).click();
+  await expect(page).toHaveURL(/\?sort=brand$/);
+
+  await page.getByRole('radio', { name: 'Newest' }).click();
+  await expect(page).toHaveURL((url) => url.search === '');
+});
+
+test('пустое место «Next pair?» в коллекции ведёт в вишлист', async ({ page }) => {
+  await page.goto('./');
+  await page.waitForSelector('astro-island:not([ssr])');
+
+  await page.getByRole('button', { name: /Next pair\?/ }).click();
+  await expect(page).toHaveURL(/status=wish/);
+  await expect(page.getByRole('tab', { name: /Wishlist/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('shoe-card')).toHaveCount(await tabCount(page, /Wishlist/));
+  await expect(page.getByRole('button', { name: /Next pair\?/ })).toHaveCount(0);
+});
+
+test('русская версия под /ru/ и переключатель языка', async ({ page }) => {
+  await page.goto('./ru/');
+  await expect(page.getByRole('heading', { name: 'Моя коллекция' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'EN' })).toHaveAttribute('href', '/sneakers/');
+});
+
+test('3D-модель загружается и показывает расцветки', async ({ page }) => {
+  await page.goto('./shoes/khronos-shoe/');
+  await expect(page.locator('model-viewer')).toHaveJSProperty('loaded', true, { timeout: 30_000 });
+  await expect(page.getByRole('radiogroup', { name: 'Colorway' }).getByRole('radio')).toHaveCount(3);
+});
+
+test('галерея вишлист-пары открывается в лайтбоксе', async ({ page }) => {
+  await page.goto('./shoes/converse-chuck-taylor-all-star-hi-black/');
+  await page.waitForSelector('astro-island:not([ssr])');
+
+  const thumbs = page.getByTestId('gallery-thumb');
+  await expect(thumbs).toHaveCount(1);
+
+  await thumbs.first().click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Next photo' })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(thumbs.first()).toBeFocused();
+});
+
+test('пара без фото: заглушка вместо галереи и ссылка «Где купить»', async ({ page }) => {
+  await page.goto('./shoes/nike-air-force-1-low-lsu-fj1408-500/');
+  await expect(page.getByTestId('photo-placeholder')).toContainText('Photo coming soon');
+  await expect(page.getByRole('link', { name: 'Where to buy' })).toHaveAttribute('href', /thepoizon\.ru/);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /og\.png$/);
+});
+
+test('хлебная крошка и «Назад» возвращают в каталог с теми же фильтрами', async ({ page }) => {
+  await page.goto('./');
+  await page.waitForSelector('astro-island:not([ssr])');
+
+  await page.getByRole('tab', { name: /Wishlist/ }).click();
+  await page.getByRole('toolbar', { name: 'Brand' }).getByRole('button', { name: 'Nike' }).click();
+  await expect(page).toHaveURL(/status=wish.*brand=Nike/);
+
+  const query = new URL(page.url()).search;
+  const cards = page.getByTestId('shoe-card');
+  const af1 = page.locator('[data-testid="shoe-card"][href$="shoes/nike-air-force-1-low-white-orange/"]');
+  const nikeCount = await cards.count();
+  const crumb = page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Wishlist' });
+
+  await af1.click();
+  await expect(page).toHaveURL(/shoes\/nike-air-force-1-low-white-orange/);
+  await crumb.click();
+
+  await expect(page).toHaveURL((url) => url.pathname === '/sneakers/' && url.search === query);
+  await expect(cards).toHaveCount(nikeCount);
+  await expect(af1).toBeInViewport();
+
+  // The browser Back button restores the filters too.
+  await af1.click();
+  await expect(page).toHaveURL(/shoes\/nike-air-force-1-low-white-orange/);
+  await page.goBack();
+  await expect(page).toHaveURL((url) => url.search === query);
+  await expect(cards).toHaveCount(nikeCount);
+  await expect(af1).toBeInViewport();
+
+  // Direct landing: no list to return to, the crumb links to the pair's catalog tab.
+  await page.goto('./ru/shoes/adidas-samba-coca-cola-kh6893/');
+  await expect(
+    page.getByRole('navigation', { name: 'Навигационная цепочка' }).getByRole('link', { name: 'Вишлист' }),
+  ).toHaveAttribute('href', '/sneakers/ru/?status=wish');
+});
+
+test('отфильтрованный URL: каталог не мелькает вкладкой по умолчанию', async ({ page }) => {
+  // Record the selected tab on the first frame the catalog is visible at all.
+  await page.addInitScript(() => {
+    const check = () => {
+      const catalog = document.querySelector('[data-catalog]');
+      if (catalog && Number(getComputedStyle(catalog).opacity) > 0) {
+        const tab = catalog.querySelector('[role="tab"][aria-selected="true"]');
+        document.documentElement.dataset.firstTab = tab?.textContent ?? '';
+        return;
+      }
+      requestAnimationFrame(check);
+    };
+
+    requestAnimationFrame(check);
+  });
+
+  await page.goto('./?status=wish&brand=Nike');
+  await expect(page.locator('html')).toHaveAttribute('data-first-tab', /^Wishlist/);
+});

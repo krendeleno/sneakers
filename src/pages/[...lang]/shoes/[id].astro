@@ -1,0 +1,99 @@
+---
+import { getImage } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import BaseLayout from '@/app/layouts/BaseLayout.astro';
+import { ShoeLabel, SneakerSilhouette, toShoe } from '@/entities/shoe';
+import { getTranslations, LOCALES, type Locale, langParam } from '@/shared/i18n';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/shared/ui';
+import { ShoeGallery } from '@/widgets/shoe-gallery';
+import { ShoeShowcase } from '@/widgets/shoe-showcase';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('shoes');
+
+  return LOCALES.flatMap((locale) =>
+    entries.map((entry) => ({
+      params: { lang: langParam(locale), id: entry.id },
+      props: { entry },
+    })),
+  );
+}
+
+const locale = Astro.currentLocale as Locale;
+const t = getTranslations(locale);
+const { entry } = Astro.props;
+const shoe = toShoe(entry, locale);
+
+const resize = async (src: ImageMetadata, width?: number) => {
+  const image = await getImage({ src, width });
+  return { src: image.src, width: Number(image.attributes.width), height: Number(image.attributes.height) };
+};
+
+// Full size: the hero, lightbox, model-viewer poster and og:image. Gallery strip: ~220px wide, 2x.
+// A wish pair may have no pictures yet: a placeholder instead of the gallery, the site's og.png.
+const images = await Promise.all(
+  [entry.data.poster, ...entry.data.photos].filter((src) => src !== undefined).map((src) => resize(src)),
+);
+const thumbs = await Promise.all(entry.data.photos.map((src) => resize(src, 480)));
+
+const poster = images[0];
+const catalog = getRelativeLocaleUrl(locale, '');
+const isWish = shoe.status === 'wish';
+---
+
+<BaseLayout
+  title={`${shoe.name} — ${shoe.brand}`}
+  description={`${shoe.brand} ${shoe.name}, ${shoe.year}. ${shoe.description}`}
+  image={poster?.src}
+>
+  {/* The hero (gallery's first image or model-viewer's poster, which lives in its shadow DOM) is the LCP */}
+  {poster && <link slot="head" rel="preload" as="image" href={poster.src} fetchpriority="high" />}
+  {/* The pair's catalog tab; [data-back-link] makes it return to exactly where you came from, see BaseLayout */}
+  <Breadcrumb aria-label={t.breadcrumb}>
+    <BreadcrumbList>
+      <BreadcrumbItem>
+        <BreadcrumbLink href={isWish ? `${catalog}?status=wish` : catalog} data-back-link>
+          {isWish ? t.wishlist : t.collection}
+        </BreadcrumbLink>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem>
+        <BreadcrumbPage>{shoe.name}</BreadcrumbPage>
+      </BreadcrumbItem>
+    </BreadcrumbList>
+  </Breadcrumb>
+  <div class="mt-4 grid gap-8 lg:grid-cols-[3fr_2fr]">
+    <div>
+      {
+        shoe.model && poster ? (
+          <ShoeShowcase client:load shoe={{ ...shoe, model: shoe.model }} poster={poster.src} locale={locale} />
+        ) : poster ? (
+          <ShoeGallery client:load shoe={shoe} images={images} thumbs={thumbs} locale={locale} />
+        ) : (
+          // An empty box waiting for its photo; morphs from the label's placeholder like a poster would
+          <div
+            data-testid="photo-placeholder"
+            class="flex aspect-[4/3] w-full flex-col items-center justify-center gap-4 rounded-md border-2 border-dashed border-input text-muted-foreground"
+            style={{ viewTransitionName: `shoe-${shoe.id}` }}
+          >
+            <SneakerSilhouette className="w-2/5 opacity-40" />
+            <p class="text-sm font-medium tracking-[0.14em] uppercase">{t.photoSoon}</p>
+          </div>
+        )
+      }
+    </div>
+    <div class="space-y-4">
+      <ShoeLabel shoe={shoe} locale={locale} size="lg" />
+      <p class="pt-2 text-foreground/85">{shoe.description}</p>
+      {shoe.credit && <p class="text-xs text-muted-foreground">{shoe.model ? t.modelCredit : t.photoCredit} {shoe.credit}</p>}
+    </div>
+  </div>
+</BaseLayout>

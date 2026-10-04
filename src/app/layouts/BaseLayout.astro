@@ -1,0 +1,241 @@
+---
+import { getAbsoluteLocaleUrl, getRelativeLocaleUrl } from 'astro:i18n';
+import { ClientRouter } from 'astro:transitions';
+import '@/app/styles/global.css';
+import { EST_YEAR, MY_PARAMS } from '@/shared/config';
+import { getTranslations, LOCALES, type Locale } from '@/shared/i18n';
+import { withBase } from '@/shared/lib';
+
+type Props = { title: string; description?: string; image?: string; noindex?: boolean };
+
+const locale = Astro.currentLocale as Locale;
+const t = getTranslations(locale);
+
+// `image` is already base-prefixed by the caller (see the shoe page's `poster`); the default isn't.
+const { title, description = t.siteDescription, image = withBase('og.png'), noindex } = Astro.props;
+const ogImage = new URL(image, Astro.site).href;
+const ogImageDims = image.endsWith('og.png') ? { width: 1200, height: 630 } : undefined;
+
+// Page path without base and locale prefix, e.g. "shoes/x/" — used for the language switcher.
+const path = Astro.url.pathname.slice(getRelativeLocaleUrl(locale, '').length);
+const absolute = (l: Locale) => getAbsoluteLocaleUrl(l, path);
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" content="#121212" />
+    <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
+    <link rel="icon" type="image/png" sizes="32x32" href={withBase('favicon-32.png')} />
+    <link rel="apple-touch-icon" href={withBase('apple-touch-icon.png')} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    {ogImageDims && (
+      <>
+        <meta property="og:image:width" content={String(ogImageDims.width)} />
+        <meta property="og:image:height" content={String(ogImageDims.height)} />
+      </>
+    )}
+    <meta name="twitter:card" content="summary_large_image" />
+    {/* The 404 has no real URL of its own (and no translation at /ru/404) */}
+    {
+      !noindex && (
+        <>
+          <link rel="canonical" href={absolute(locale)} />
+          {LOCALES.map((l) => <link rel="alternate" hreflang={l} href={absolute(l)} />)}
+          <link rel="alternate" hreflang="x-default" href={absolute('en')} />
+        </>
+      )
+    }
+    {/* Page-specific head tags, e.g. a preload for the hero image */}
+    <slot name="head" />
+    <ClientRouter />
+    <script is:inline>
+      // Catalog filters live in the query, but the static HTML shows the defaults: hide the catalog
+      // ([data-catalog]) until its island renders the URL state and removes the class. Timeout: JS failed.
+      if (location.search) {
+        document.documentElement.classList.add('catalog-pending');
+        setTimeout(() => document.documentElement.classList.remove('catalog-pending'), 2000);
+      }
+    </script>
+  </head>
+  <body class="min-h-screen bg-background font-sans text-foreground antialiased">
+    <header class="border-b border-border bg-card">
+      <nav class="mx-auto flex max-w-6xl items-center gap-6 px-4 py-4">
+        {/* Stenciled crate sign; its name is just "Sneakers", the second line is decoration */}
+        <a href={getRelativeLocaleUrl(locale, '')} class="sign">
+          <span class="sign-name">Sneakers</span>
+          <span aria-hidden="true" class="sign-est">{t.est} {EST_YEAR} · {MY_PARAMS.ru} RU / {MY_PARAMS.eu} EU</span>
+        </a>
+        <div class="ml-auto flex gap-1 text-sm">
+          {
+            LOCALES.map((l, i) => (
+              <>
+                {i > 0 && <span aria-hidden="true" class="text-border">/</span>}
+                <a
+                  href={getRelativeLocaleUrl(l, path)}
+                  hreflang={l}
+                  lang={l}
+                  aria-current={l === locale ? 'true' : undefined}
+                  class={l === locale ? 'font-medium text-primary' : 'text-muted-foreground hover:text-foreground'}
+                >
+                  {l.toUpperCase()}
+                </a>
+              </>
+            ))
+          }
+        </div>
+      </nav>
+    </header>
+    <main class="mx-auto max-w-6xl px-4 py-8">
+      <slot />
+    </main>
+    <script>
+      // Back links ([data-back-link], the list crumb on a shoe page) return to the list you came from — catalog with its
+      // filters in the query. The list URL is remembered on leaving a page with the catalog ([data-catalog]); filters
+      // live in the URL via replaceState, so it's read at that moment. `document.referrer` doesn't follow ClientRouter
+      // navigations.
+      // If that list is the previous history entry, go back for real (restores scroll); otherwise just link to it.
+      // No remembered list (direct landing) or JS off: the link keeps its server href (the catalog tab of the pair).
+      type BackTarget = { url: string; index: number; lang: string };
+      const KEY = 'back-target';
+
+      document.addEventListener('astro:before-preparation', () => {
+        if (!document.querySelector('[data-catalog]')) return;
+
+        const target: BackTarget = {
+          url: location.pathname + location.search,
+          index: history.state?.index,
+          lang: document.documentElement.lang,
+        };
+        sessionStorage.setItem(KEY, JSON.stringify(target));
+      });
+
+      document.addEventListener('astro:page-load', () => {
+        const link = document.querySelector<HTMLAnchorElement>('[data-back-link]');
+        const target: BackTarget | null = JSON.parse(sessionStorage.getItem(KEY) ?? 'null');
+        if (!link || !target || target.lang !== document.documentElement.lang) return;
+
+        // Only a list of the same tab (the crumb says Collection or Wishlist).
+        const status = (url: string) => new URL(url, location.href).searchParams.get('status');
+        if (status(target.url) !== status(link.href)) return;
+
+        link.href = target.url;
+        link.addEventListener('click', (event) => {
+          if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          if (history.state?.index !== target.index + 1) return;
+
+          event.preventDefault();
+          history.back();
+        });
+      });
+
+      // Same for ClientRouter navigations into a filtered catalog (the swap copies <html> attributes).
+      const PENDING = 'catalog-pending';
+      document.addEventListener('astro:before-swap', (event) => {
+        if (event.to.search && event.newDocument.querySelector('[data-catalog]')) {
+          event.newDocument.documentElement.classList.add(PENDING);
+        }
+      });
+
+      // Resolves once the catalog has rendered its URL state (it drops the class), at most after `timeout` ms.
+      function catalogRendered(timeout = 1000) {
+        const root = document.documentElement;
+
+        return new Promise<void>((resolve) => {
+          const done = () => {
+            observer.disconnect();
+            clearTimeout(timer);
+            root.classList.remove(PENDING);
+            resolve();
+          };
+
+          const observer = new MutationObserver(() => !root.classList.contains(PENDING) && done());
+          observer.observe(root, { attributeFilter: ['class'] });
+          const timer = setTimeout(done, timeout);
+        });
+      }
+
+      // ClientRouter takes the new view-transition snapshot right after the DOM swap, before islands hydrate, so a
+      // filtered catalog would still show its default tab and a shoe page couldn't morph back into its box. Hold the
+      // snapshot until the catalog has rendered, then redo the scroll restore (the wall may have been shorter).
+      // Back/Forward: ClientRouter has already switched history.state to the target entry when it starts the transition.
+      let traversing = false;
+      addEventListener('popstate', () => {
+        traversing = true;
+      });
+
+      const startViewTransition = document.startViewTransition?.bind(document);
+      if (startViewTransition) {
+        document.startViewTransition = ((update?: ViewTransitionUpdateCallback) => {
+          // Grab the target entry's scroll now: the swap scrolls while the wall is still short, and ClientRouter's
+          // scrollend handler then saves that clamped value over it.
+          const restore = traversing ? history.state : null;
+          traversing = false;
+
+          return startViewTransition(async () => {
+            await update?.();
+            if (document.documentElement.classList.contains(PENDING)) await catalogRendered();
+            if (restore) scrollTo(restore.scrollX ?? 0, restore.scrollY ?? 0);
+          });
+        }) as typeof document.startViewTransition;
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  /* Warehouse crate stenciling: a condensed caps word in a thin frame, a volt marker on its corner. */
+  .sign {
+    position: relative;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.2rem 0.55rem 0.25rem;
+    border: 1.5px solid var(--foreground);
+    border-radius: 1px;
+    line-height: 1;
+    outline-offset: 3px;
+  }
+
+  .sign::before {
+    content: "";
+    position: absolute;
+    top: -1.5px;
+    right: -1.5px;
+    width: 6px;
+    height: 6px;
+    background: var(--primary);
+  }
+
+  .sign-name {
+    /* System condensed faces (DIN/Arial Narrow on macOS, Roboto Condensed on Android) before a stretched fallback */
+    font-family: "DIN Condensed", "Arial Narrow", "Roboto Condensed", sans-serif-condensed, ui-sans-serif, sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-stretch: condensed;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    /* DIN Condensed sits high: optical centering in the frame */
+    padding-top: 0.12em;
+    margin-right: -0.14em;
+  }
+
+  .sign-est {
+    margin-top: 0.2rem;
+    font-family: ui-monospace, monospace;
+    font-size: 0.5625rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--muted-foreground);
+  }
+</style>

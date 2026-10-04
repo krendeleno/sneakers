@@ -15,27 +15,27 @@ const base = {
 };
 
 describe('shoeSchema', () => {
-  it('owned с моделью валиден', () => {
+  it('accepts owned with a model', () => {
     expect(shoeSchema.safeParse({ ...base, status: 'owned', model: 'af1.glb' }).success).toBe(true);
   });
 
-  it('owned без модели невалиден', () => {
+  it('rejects owned without a model', () => {
     expect(shoeSchema.safeParse({ ...base, status: 'owned' }).success).toBe(false);
   });
 
-  it('wish с моделью невалиден', () => {
+  it('rejects wish with a model', () => {
     expect(shoeSchema.safeParse({ ...base, status: 'wish', model: 'af1.glb' }).success).toBe(false);
   });
 
-  it('hotspots по умолчанию — пустой массив', () => {
+  it('defaults hotspots to an empty array', () => {
     expect(shoeSchema.parse({ ...base, status: 'wish' }).hotspots).toEqual([]);
   });
 
-  it('description нужен на обоих языках', () => {
+  it('requires description in both languages', () => {
     expect(shoeSchema.safeParse({ ...base, status: 'wish', description: { en: 'Classic' } }).success).toBe(false);
   });
 
-  it('label хотспота локализован', () => {
+  it('localizes hotspot labels', () => {
     const hotspot = { position: '0 0 0', label: { en: 'Toe', ru: 'Носок' } };
 
     expect(shoeSchema.safeParse({ ...base, status: 'wish', hotspots: [hotspot] }).success).toBe(true);
@@ -44,34 +44,34 @@ describe('shoeSchema', () => {
     );
   });
 
-  it('photos по умолчанию — пустой массив', () => {
+  it('defaults photos to an empty array', () => {
     expect(shoeSchema.parse({ ...base, status: 'wish' }).photos).toEqual([]);
   });
 
-  it('wish с фото валиден', () => {
+  it('accepts wish with photos', () => {
     expect(shoeSchema.safeParse({ ...base, status: 'wish', photos: ['af1-side.svg'] }).success).toBe(true);
   });
 
-  it('owned с фото невалиден', () => {
+  it('rejects owned with photos', () => {
     expect(shoeSchema.safeParse({ ...base, status: 'owned', model: 'af1.glb', photos: ['af1-side.svg'] }).success).toBe(
       false,
     );
   });
 
-  it('wish без постера валиден, owned — нет', () => {
+  it('allows a missing poster for wish but not owned', () => {
     const noPoster = { ...base, poster: undefined };
 
     expect(shoeSchema.safeParse({ ...noPoster, status: 'wish' }).success).toBe(true);
     expect(shoeSchema.safeParse({ ...noPoster, status: 'owned', model: 'af1.glb' }).success).toBe(false);
   });
 
-  it('buyUrl должен быть URL', () => {
+  it('requires buyUrl to be a URL', () => {
     expect(shoeSchema.safeParse({ ...base, status: 'wish', buyUrl: 'nike' }).success).toBe(false);
   });
 });
 
 describe('toShoe', () => {
-  it('берёт локализованные поля на нужном языке', () => {
+  it('picks localized fields in the requested locale', () => {
     const hotspot = { position: '0 0 0', label: { en: 'Toe', ru: 'Носок' } };
     const data = shoeSchema.parse({ ...base, status: 'wish', hotspots: [hotspot] });
 

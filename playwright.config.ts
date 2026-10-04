@@ -8,7 +8,7 @@ export default defineConfig({
   testDir: './e2e',
   use: { baseURL },
   webServer: {
-    command: `pnpm build && pnpm preview --port ${port} --ignore-lock`,
+    command: `SHOES_DIR=./e2e/fixtures/shoes pnpm build && pnpm preview --port ${port} --ignore-lock`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
   },

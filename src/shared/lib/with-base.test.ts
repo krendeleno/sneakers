@@ -4,25 +4,25 @@ import { withBase } from './with-base';
 describe('withBase', () => {
   afterEach(() => vi.unstubAllEnvs());
 
-  it('склеивает base без слеша на конце', () => {
+  it('joins a base without a trailing slash', () => {
     vi.stubEnv('BASE_URL', '/sneakers');
 
     expect(withBase('posters/a.jpg')).toBe('/sneakers/posters/a.jpg');
   });
 
-  it('не дублирует слеши', () => {
+  it('does not duplicate slashes', () => {
     vi.stubEnv('BASE_URL', '/sneakers/');
 
     expect(withBase('/shoes/a/')).toBe('/sneakers/shoes/a/');
   });
 
-  it('работает с корневым base', () => {
+  it('works with the root base', () => {
     vi.stubEnv('BASE_URL', '/');
 
     expect(withBase('shoes/a/')).toBe('/shoes/a/');
   });
 
-  it('корень сайта', () => {
+  it('handles the site root', () => {
     vi.stubEnv('BASE_URL', '/sneakers');
 
     expect(withBase('/')).toBe('/sneakers/');

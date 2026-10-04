@@ -30,14 +30,14 @@ for (const [name, path] of [
 }
 
 test('a11y: owned pair (3D)', async ({ page }) => {
-  await page.goto('./shoes/khronos-shoe/');
+  await page.goto('./shoes/owned-3d/');
   await expect(page.locator('model-viewer')).toHaveJSProperty('loaded', true, { timeout: 30_000 });
   await expect(page.getByRole('radiogroup', { name: 'Colorway' })).toBeVisible();
   await expectNoViolations(page);
 });
 
 test('a11y: wishlist pair with the lightbox', async ({ page }) => {
-  await page.goto('./shoes/converse-chuck-taylor-all-star-hi-black/');
+  await page.goto('./shoes/wish-photos/');
   await hydrated(page);
   await expectNoViolations(page);
 
@@ -47,7 +47,7 @@ test('a11y: wishlist pair with the lightbox', async ({ page }) => {
 });
 
 test('a11y: wishlist pair without a photo', async ({ page }) => {
-  await page.goto('./ru/shoes/nike-air-force-1-low-lsu-fj1408-500/');
+  await page.goto('./ru/shoes/wish-no-photo/');
   await expect(page.getByTestId('photo-placeholder')).toBeVisible();
   await expectNoViolations(page);
 });

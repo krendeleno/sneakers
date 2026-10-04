@@ -24,7 +24,10 @@ type ShoeGalleryProps = {
   locale: Locale;
 };
 
-/** Wishlist pair gallery: poster + photo thumbnails; any image opens a lightbox carousel at that image. */
+/**
+ * Gallery for a pair without a 3D model (wish, or owned and not yet scanned): poster + photo thumbnails; any image
+ * opens a lightbox carousel at that image.
+ */
 export function ShoeGallery({ shoe, images, thumbs, locale }: ShoeGalleryProps) {
   const t = getTranslations(locale);
   const [openAt, setOpenAt] = useState<number | null>(null);

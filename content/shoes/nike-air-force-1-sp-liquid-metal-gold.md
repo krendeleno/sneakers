@@ -4,6 +4,7 @@ brand: Nike
 year: 2019
 colors: [gold, white]
 status: wish
+photos: [./photos/nike-air-force-1-sp-liquid-metal-gold-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900001588842560
 description:
   en: "Women's Air Force 1 SP from 2019, dipped in mirror-like metallic gold over a white sole."

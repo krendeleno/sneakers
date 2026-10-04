@@ -4,6 +4,7 @@ brand: Converse
 year: 2013
 colors: [white, silver]
 status: wish
+photos: [./photos/converse-chuck-70-hi-iridescent-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900001412812271
 description:
   en: "Chuck 70 Hi in a color-shifting laser-white finish."

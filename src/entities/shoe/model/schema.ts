@@ -24,22 +24,21 @@ export const shoeSchema = <Image extends z.ZodType>(image: () => Image) =>
       colors: z.array(z.string()).min(1),
       status: z.enum(['owned', 'wish']),
       size: z.string().optional(),
+      /** 3D model in public/models/ — owned pairs only, and only once scanned; until then they show photos like a wish
+       * pair */
       model: z.string().optional(),
-      /** 4:3 render, content/shoes/posters/ — wish pairs may have none yet (they get a "photo coming soon" placeholder) */
+      /** 4:3 render, content/shoes/posters/ — required with a model (model-viewer's poster); otherwise optional: the
+       * first gallery photo stands in, and with neither the pair gets a "photo coming soon" placeholder */
       poster: image().optional(),
-      /** Gallery photos in content/shoes/photos/ — wish pairs only (owned pairs show the 3D model instead) */
+      /** Gallery photos in content/shoes/photos/ — shown while the pair has no 3D model (any status) */
       photos: z.array(image()).default([]),
       buyUrl: z.url().optional(),
       hotspots: z.array(hotspotSchema).default([]),
       credit: z.string().optional(),
       description: localized,
     })
-    .refine(
-      (shoe) => (shoe.status === 'owned' ? Boolean(shoe.model) : !shoe.model),
-      'owned shoes need a model, wish shoes must not have one',
-    )
-    .refine((shoe) => shoe.status === 'wish' || shoe.poster !== undefined, 'owned shoes need a poster')
-    .refine((shoe) => shoe.status === 'wish' || shoe.photos.length === 0, 'only wish shoes can have photos');
+    .refine((shoe) => shoe.status === 'owned' || !shoe.model, 'wish shoes must not have a model')
+    .refine((shoe) => !shoe.model || shoe.poster !== undefined, 'shoes with a model need a poster');
 
 export type ShoeData<Image = ImageMetadata> = z.infer<ReturnType<typeof shoeSchema<z.ZodType<Image>>>>;
 export type ShoeStatus = ShoeData['status'];
@@ -56,7 +55,7 @@ export type Shoe = Omit<ShoeData, 'description' | 'hotspots' | 'poster' | 'photo
   hotspots: Hotspot[];
 };
 
-/** A box on the catalog wall: its page link and label thumbnail (none yet for some wish pairs), resolved by the page. */
+/** A box on the catalog wall: its page link and label thumbnail (none yet for some pairs), resolved by the page. */
 export type WallShoe = Shoe & { href: string; thumb?: string };
 
 export function toShoe<Image>(entry: { id: string; data: ShoeData<Image> }, locale: Locale): Shoe {

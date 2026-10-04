@@ -4,6 +4,7 @@ brand: Nike
 year: 2021
 colors: [navy, red, gold]
 status: wish
+photos: [./photos/nike-sb-dunk-low-barcelona-dj0606-400-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900011025695983
 description:
   en: "Nike SB Dunk Low with mismatched suede panels in navy, red and gold, a nod to Barcelona and Catalonia."

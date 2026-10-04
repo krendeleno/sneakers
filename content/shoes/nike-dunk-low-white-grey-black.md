@@ -4,6 +4,7 @@ brand: Nike
 year: 1985
 colors: [white, gray, black]
 status: wish
+photos: [./photos/nike-dunk-low-white-grey-black-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900017210297068
 description:
   en: "Men's Nike Dunk Low in white, grey and black."

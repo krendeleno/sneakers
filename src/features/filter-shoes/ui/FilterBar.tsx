@@ -1,19 +1,7 @@
 import { useId } from 'react';
 import type { ShoeStatus } from '@/entities/shoe';
 import { getTranslations, type Locale } from '@/shared/i18n';
-import {
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@/shared/ui';
+import { Input, Tabs, TabsList, TabsTrigger, ToggleGroup, ToggleGroupItem } from '@/shared/ui';
 import { type FacetOptions, type ShoeFilters, type ShoeSort, SORTS, switchStatus } from '../model/filters';
 
 type FilterBarProps = {
@@ -26,9 +14,6 @@ type FilterBarProps = {
 };
 
 const STATUSES: ShoeStatus[] = ['owned', 'wish'];
-
-// Radix Select forbids an empty item value, so "any year" gets a sentinel.
-const ANY_YEAR = 'all';
 
 export function FilterBar({ filters, options, counts, onChange, locale }: FilterBarProps) {
   const t = getTranslations(locale);
@@ -65,25 +50,8 @@ export function FilterBar({ filters, options, counts, onChange, locale }: Filter
           placeholder={t.searchPlaceholder}
           value={filters.query}
           onChange={(e) => onChange({ ...filters, query: e.target.value })}
-          className="sm:w-72"
+          className="w-full min-w-0 flex-1 sm:w-auto"
         />
-        <Select
-          value={filters.year === null ? ANY_YEAR : String(filters.year)}
-          onValueChange={(value) => onChange({ ...filters, year: value === ANY_YEAR ? null : Number(value) })}
-        >
-          <SelectTrigger aria-label={t.year} className="min-w-36">
-            {/* Explicit text so the server-rendered trigger isn't empty before hydration */}
-            <SelectValue>{filters.year ?? t.anyYear}</SelectValue>
-          </SelectTrigger>
-          <SelectContent position="popper">
-            <SelectItem value={ANY_YEAR}>{t.anyYear}</SelectItem>
-            {options.years.map((year) => (
-              <SelectItem key={year} value={String(year)}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <div className="flex items-center gap-2 sm:ml-auto">
           <span id={sortLabelId} className="text-sm text-muted-foreground">
             {t.sort}

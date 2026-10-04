@@ -19,8 +19,8 @@ describe('shoeSchema', () => {
     expect(shoeSchema.safeParse({ ...base, status: 'owned', model: 'af1.glb' }).success).toBe(true);
   });
 
-  it('rejects owned without a model', () => {
-    expect(shoeSchema.safeParse({ ...base, status: 'owned' }).success).toBe(false);
+  it('accepts owned without a model', () => {
+    expect(shoeSchema.safeParse({ ...base, status: 'owned' }).success).toBe(true);
   });
 
   it('rejects wish with a model', () => {
@@ -52,16 +52,15 @@ describe('shoeSchema', () => {
     expect(shoeSchema.safeParse({ ...base, status: 'wish', photos: ['af1-side.svg'] }).success).toBe(true);
   });
 
-  it('rejects owned with photos', () => {
-    expect(shoeSchema.safeParse({ ...base, status: 'owned', model: 'af1.glb', photos: ['af1-side.svg'] }).success).toBe(
-      false,
-    );
+  it('accepts owned with photos', () => {
+    expect(shoeSchema.safeParse({ ...base, status: 'owned', photos: ['af1-side.svg'] }).success).toBe(true);
   });
 
-  it('allows a missing poster for wish but not owned', () => {
+  it('allows a missing poster only without a model', () => {
     const noPoster = { ...base, poster: undefined };
 
     expect(shoeSchema.safeParse({ ...noPoster, status: 'wish' }).success).toBe(true);
+    expect(shoeSchema.safeParse({ ...noPoster, status: 'owned' }).success).toBe(true);
     expect(shoeSchema.safeParse({ ...noPoster, status: 'owned', model: 'af1.glb' }).success).toBe(false);
   });
 

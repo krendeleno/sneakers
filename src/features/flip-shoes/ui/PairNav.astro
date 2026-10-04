@@ -1,0 +1,105 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getTranslations, type Locale } from '@/shared/i18n';
+import type { Neighbors } from '../model/neighbors';
+
+type Pair = { id: string; name: string };
+type Props = { nav: Neighbors<Pair>; locale: Locale };
+
+const { nav, locale } = Astro.props;
+const t = getTranslations(locale);
+const href = (pair: Pair) => getRelativeLocaleUrl(locale, `shoes/${pair.id}`);
+
+const LINK =
+  'flex min-h-6 min-w-0 items-center gap-1 rounded-sm p-1 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+const DISABLED = 'flex items-center px-1 opacity-30';
+---
+
+{/* Plain links: keyboard arrows and swipes (script below) just click them; ClientRouter animates the change.
+    At an edge the arrow is a dimmed decoration, hidden from screen readers (the counter says where you are). */}
+<nav aria-label={t.pairNav} data-pair-nav class="flex items-center gap-3 text-sm text-muted-foreground">
+  {
+    nav.prev ? (
+      <a href={href(nav.prev)} rel="prev" data-flip="prev" aria-label={`${t.prevShoe}: ${nav.prev.name}`} class={LINK}>
+        <ChevronLeft className="size-4 shrink-0" />
+        <span class="hidden max-w-48 truncate md:inline">{nav.prev.name}</span>
+      </a>
+    ) : (
+      <span aria-hidden="true" class={DISABLED}>
+        <ChevronLeft className="size-4" />
+      </span>
+    )
+  }
+  <span class="tabular-nums" data-testid="pair-counter">{nav.index + 1} / {nav.total}</span>
+  {
+    nav.next ? (
+      <a href={href(nav.next)} rel="next" data-flip="next" aria-label={`${t.nextShoe}: ${nav.next.name}`} class={LINK}>
+        <span class="hidden max-w-48 truncate md:inline">{nav.next.name}</span>
+        <ChevronRight className="size-4 shrink-0" />
+      </a>
+    ) : (
+      <span aria-hidden="true" class={DISABLED}>
+        <ChevronRight className="size-4" />
+      </span>
+    )
+  }
+</nav>
+
+<script>
+  // Arrow keys and horizontal swipes flip pairs by clicking the nav links. Listeners live on document for the whole
+  // session (ClientRouter keeps scripts), so they look the links up at event time and do nothing on other pages.
+  const flip = (dir: 'prev' | 'next') =>
+    document.querySelector<HTMLAnchorElement>(`[data-pair-nav] [data-flip="${dir}"]`)?.click();
+
+  // Widgets that use arrow keys themselves: form fields, Radix roving focus (tabs, toggle groups — the colorway
+  // picker is a radio group), selects, and model-viewer (focus in its shadow DOM retargets to the host; arrows orbit).
+  const OWN_ARROWS =
+    'input, textarea, select, [contenteditable="true"], [role="slider"], [role="radio"], [role="tab"], ' +
+    '[role="option"], [role="combobox"], [role="listbox"], [data-slot="toggle-group"], model-viewer';
+
+  document.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.repeat) return;
+    if (document.querySelector('[role="dialog"]')) return;
+
+    const target = event.target as HTMLElement;
+    if (target.closest(OWN_ARROWS)) return;
+
+    if (event.key === 'ArrowLeft') flip('prev');
+    if (event.key === 'ArrowRight') flip('next');
+  });
+
+  // ponytail: 60px threshold, horizontal must dominate; tune if swipes feel too eager or too stiff.
+  const SWIPE = 60;
+  let start: { x: number; y: number } | null = null;
+
+  document.addEventListener(
+    'touchstart',
+    (event) => {
+      // model-viewer rotates on drag; an open lightbox (its overlay sits outside the dialog content) swipes its own
+      // photos; a pinch-zoomed page must only pan, never flip.
+      const target = event.target as HTMLElement;
+      const zoomed = (window.visualViewport?.scale ?? 1) > 1;
+      const ignored = target.closest('model-viewer') || document.querySelector('[role="dialog"]');
+      start = ignored || zoomed || event.touches.length > 1 ? null : { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    },
+    { passive: true },
+  );
+
+  document.addEventListener(
+    'touchend',
+    (event) => {
+      if (!start) return;
+
+      const dx = event.changedTouches[0].clientX - start.x;
+      const dy = event.changedTouches[0].clientY - start.y;
+      start = null;
+
+      if (Math.abs(dx) < SWIPE || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+
+      flip(dx < 0 ? 'next' : 'prev');
+    },
+    { passive: true },
+  );
+</script>

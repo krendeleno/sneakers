@@ -4,6 +4,7 @@ brand: Jordan
 year: 2021
 colors: [red, white, black]
 status: wish
+photos: [./photos/jordan-air-jordan-1-high-og-light-fusion-red-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900004879475953
 description:
   en: "Air Jordan 1 Retro High OG from summer 2021 in Light Fusion Red, white and black."

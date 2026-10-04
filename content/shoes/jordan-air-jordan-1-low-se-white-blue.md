@@ -4,6 +4,7 @@ brand: Jordan
 year: 1985
 colors: [white, blue]
 status: wish
+photos: [./photos/jordan-air-jordan-1-low-se-white-blue-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900031788556690
 description:
   en: "Women's Air Jordan 1 Low SE in white with blue overlays."

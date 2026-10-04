@@ -4,6 +4,7 @@ brand: Vans
 year: 1978
 colors: [white]
 status: wish
+photos: [./photos/vans-sk8-hi-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900011321007108
 description:
   en: "Vans' classic Sk8-Hi high-top skate shoe in white canvas."

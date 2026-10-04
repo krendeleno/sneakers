@@ -97,6 +97,10 @@ const absolute = (l: Locale) => getAbsoluteLocaleUrl(l, path);
     <main class="mx-auto max-w-6xl px-4 py-8">
       <slot />
     </main>
+    <footer class="mx-auto max-w-6xl px-4 pb-8 text-xs text-muted-foreground">
+      {/* The 404 passes both languages (its locale is only known client-side) */}
+      <p data-testid="images-note"><slot name="footer">{t.imagesNote}</slot></p>
+    </footer>
     <script>
       // Back links ([data-back-link], the list crumb on a shoe page) return to the list you came from — catalog with its
       // filters in the query. The list URL is remembered on leaving a page with the catalog ([data-catalog]); filters
@@ -187,6 +191,26 @@ const absolute = (l: Locale) => getAbsoluteLocaleUrl(l, path);
           });
         }) as typeof document.startViewTransition;
       }
+
+      // Pair flips (shoe page prev/next links, see PairNav): tag both documents with the direction so CSS slides the
+      // pair block ([data-pair]) instead of the default crossfade (global.css). The attribute must be on the new
+      // document too: the swap copies <html> attributes from it. Every navigation starts by clearing it, so an aborted
+      // flip can't leave it stuck.
+      document.addEventListener('astro:before-preparation', (event) => {
+        delete document.documentElement.dataset.flipping;
+
+        const dir = (event.sourceElement as HTMLElement | undefined)?.dataset?.flip;
+        if (dir !== 'prev' && dir !== 'next') return;
+
+        document.documentElement.dataset.flipping = dir;
+      });
+
+      document.addEventListener('astro:before-swap', (event) => {
+        const dir = document.documentElement.dataset.flipping;
+        if (!dir) return;
+
+        event.newDocument.documentElement.dataset.flipping = dir;
+      });
     </script>
   </body>
 </html>

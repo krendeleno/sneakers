@@ -4,6 +4,7 @@ brand: Jordan
 year: 1985
 colors: [blue, white]
 status: wish
+photos: [./photos/jordan-air-jordan-1-high-blue-white-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900001100460125
 description:
   en: "Air Jordan 1 High in a blue and white colorway."

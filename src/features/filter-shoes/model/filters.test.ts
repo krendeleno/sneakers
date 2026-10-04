@@ -50,10 +50,6 @@ describe('applyFilters', () => {
     expect(ids(applyFilters(shoes, { ...DEFAULT_FILTERS, colors: ['white'] }))).toEqual(['af1', 'samba']);
   });
 
-  it('filters by year', () => {
-    expect(ids(applyFilters(shoes, { ...DEFAULT_FILTERS, year: 2019 }))).toEqual(['samba', 'nb']);
-  });
-
   it('searches name and brand case-insensitively', () => {
     expect(ids(applyFilters(shoes, { ...DEFAULT_FILTERS, query: ' balance ' }))).toEqual(['nb']);
     expect(ids(applyFilters(shoes, { ...DEFAULT_FILTERS, query: 'FORCE' }))).toEqual(['af1']);
@@ -111,7 +107,6 @@ describe('URL', () => {
       sort: 'brand' as const,
       brands: ['Nike', 'New Balance'],
       colors: ['white'],
-      year: 2019,
       query: 'air',
     };
 
@@ -119,7 +114,11 @@ describe('URL', () => {
   });
 
   it('turns garbage in the URL into defaults', () => {
-    expect(filtersFromSearch('?status=lol&year=abc&sort=price')).toEqual(DEFAULT_FILTERS);
+    expect(filtersFromSearch('?status=lol&sort=price')).toEqual(DEFAULT_FILTERS);
+  });
+
+  it('ignores a stale year param from old URLs', () => {
+    expect(filtersFromSearch('?year=1982')).toEqual(DEFAULT_FILTERS);
   });
 
   it('keeps the default sort out of the URL', () => {
@@ -133,7 +132,6 @@ describe('facetOptions', () => {
     expect(facetOptions(shoes, 'owned')).toEqual({
       brands: ['Adidas', 'New Balance', 'Nike'],
       colors: ['black', 'green', 'white'],
-      years: [2021, 2019],
     });
   });
 });

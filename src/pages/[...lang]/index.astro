@@ -17,20 +17,24 @@ const t = getTranslations(locale);
 
 const entries = await getCollection('shoes');
 const shoes = await Promise.all(
-  entries.map(async (entry) => ({
-    ...toShoe(entry, locale),
-    href: getRelativeLocaleUrl(locale, `shoes/${entry.id}`),
-    // The label's square thumbnail (~180px on the wall, 2x); none = the label's placeholder
-    thumb: entry.data.poster && (await getImage({ src: entry.data.poster, height: 360 })).src,
-  })),
+  entries.map(async (entry) => {
+    // The label's square thumbnail (~180px on the wall, 2x): poster, or the first gallery photo; none = the label's placeholder
+    const main = entry.data.poster ?? entry.data.photos[0];
+
+    return {
+      ...toShoe(entry, locale),
+      href: getRelativeLocaleUrl(locale, `shoes/${entry.id}`),
+      thumb: main && (await getImage({ src: main, height: 360 })).src,
+    };
+  }),
 );
 
 shoes.sort((a, b) => b.year - a.year);
 ---
 
 <BaseLayout title={t.siteTitle}>
-  <h1 class="text-3xl font-semibold">{t.catalogHeading}</h1>
-  <p class="mt-1 mb-6 text-sm text-muted-foreground" data-testid="my-params">
+  <h1 class="sr-only">{t.catalogHeading}</h1>
+  <p class="mb-6 text-sm text-muted-foreground" data-testid="my-params">
     {t.size} <span class="font-medium text-foreground">{MY_SIZE}</span> · {t.footLength}{' '}
     <span class="font-medium text-foreground">{MY_PARAMS.footCm} {t.cm}</span>
   </p>

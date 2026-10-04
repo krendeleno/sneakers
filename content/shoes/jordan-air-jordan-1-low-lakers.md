@@ -4,6 +4,7 @@ brand: Jordan
 year: 1985
 colors: [blue, yellow]
 status: wish
+photos: [./photos/jordan-air-jordan-1-low-lakers-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900004112268748
 description:
   en: "Air Jordan 1 Low in a Lakers-inspired colorway."

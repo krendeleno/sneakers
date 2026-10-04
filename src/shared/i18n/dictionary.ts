@@ -19,8 +19,6 @@ const en = {
   status: 'Status',
   search: 'Search',
   searchPlaceholder: 'Search by name or brand',
-  year: 'Year',
-  anyYear: 'Any year',
   brand: 'Brand',
   color: 'Color',
   sort: 'Sort',
@@ -45,6 +43,12 @@ const en = {
   prevPhoto: 'Previous photo',
   nextPhoto: 'Next photo',
   close: 'Close',
+  /** Prev/next pair links on a shoe page */
+  pairNav: 'Pairs',
+  prevShoe: 'Previous pair',
+  nextShoe: 'Next pair',
+  /** Footer note on every page */
+  imagesNote: 'Images are AI-generated or my own photos unless noted otherwise.',
 };
 
 export type Dictionary = Record<keyof typeof en, string>;
@@ -62,8 +66,6 @@ const ru: Dictionary = {
   status: 'Статус',
   search: 'Поиск',
   searchPlaceholder: 'Поиск по названию или бренду',
-  year: 'Год',
-  anyYear: 'Любой год',
   brand: 'Бренд',
   color: 'Цвет',
   sort: 'Сортировка',
@@ -88,6 +90,10 @@ const ru: Dictionary = {
   prevPhoto: 'Предыдущее фото',
   nextPhoto: 'Следующее фото',
   close: 'Закрыть',
+  pairNav: 'Пары',
+  prevShoe: 'Предыдущая пара',
+  nextShoe: 'Следующая пара',
+  imagesNote: 'Изображения сгенерированы ИИ или сняты мной, если не указано иное.',
 };
 
 const dictionaries: Record<Locale, Dictionary> = { en, ru };

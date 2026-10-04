@@ -4,6 +4,7 @@ brand: Jordan
 year: 2025
 colors: [navy, purple]
 status: wish
+photos: [./photos/jordan-air-jordan-1-low-og-zion-voodoo-alternate-ih2309-500-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900059303609869
 description:
   en: "Zion Williamson's 2025 Air Jordan 1 Low OG “Voodoo Alternate” in deep blue and purple, with raw-edged suede and burlap."

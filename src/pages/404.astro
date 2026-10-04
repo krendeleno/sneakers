@@ -2,11 +2,13 @@
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import BaseLayout from '@/app/layouts/BaseLayout.astro';
 import '@/entities/shoe/ui/shoebox.css';
+import { getTranslations } from '@/shared/i18n';
 
 // Locale isn't known at build time for a static 404 — render English, then a tiny inline script
 // switches to Russian if the path that 404'd was under /ru/ (Astro i18n routing, `prefixDefaultLocale: false`).
 const catalogEn = getRelativeLocaleUrl('en', '');
 const catalogRu = getRelativeLocaleUrl('ru', '');
+const imagesNote = { en: getTranslations('en').imagesNote, ru: getTranslations('ru').imagesNote };
 ---
 
 <BaseLayout title="404 — Pair not found" noindex>
@@ -44,13 +46,18 @@ const catalogRu = getRelativeLocaleUrl('ru', '');
       <span data-i18n="ru" hidden>Назад в коллекцию</span>
     </a>
   </div>
-  <script is:inline define:vars={{ catalogRu }}>
-    if (location.pathname.startsWith(catalogRu)) {
-      document.documentElement.lang = 'ru';
-      document.title = '404 — Пара не найдена';
-      document.getElementById('back-link').href = catalogRu;
-      document.querySelectorAll('[data-i18n="en"]').forEach((el) => (el.hidden = true));
-      document.querySelectorAll('[data-i18n="ru"]').forEach((el) => (el.hidden = false));
-    }
-  </script>
+  <Fragment slot="footer">
+    <span data-i18n="en">{imagesNote.en}</span>
+    <span data-i18n="ru" hidden>{imagesNote.ru}</span>
+    {/* Last in the page (footer slot), so the whole page is parsed by the time it switches the language */}
+    <script is:inline define:vars={{ catalogRu }}>
+      if (location.pathname.startsWith(catalogRu)) {
+        document.documentElement.lang = 'ru';
+        document.title = '404 — Пара не найдена';
+        document.getElementById('back-link').href = catalogRu;
+        document.querySelectorAll('[data-i18n="en"]').forEach((el) => (el.hidden = true));
+        document.querySelectorAll('[data-i18n="ru"]').forEach((el) => (el.hidden = false));
+      }
+    </script>
+  </Fragment>
 </BaseLayout>

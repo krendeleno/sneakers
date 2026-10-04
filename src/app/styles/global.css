@@ -73,3 +73,63 @@ html {
     cursor: pointer;
   }
 }
+
+/*
+  Pair flips (see BaseLayout): the pair block slides as one group, the rest of the page just crossfades. The
+  poster's own name (shoe-<id>, the catalog box morph; inline style, hence !important) is switched off so it rides
+  inside the block. Reduced motion: the default crossfade.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  html[data-flipping] [data-pair] {
+    view-transition-name: pair;
+  }
+
+  html[data-flipping] [data-pair] [style*="view-transition-name"] {
+    /* biome-ignore lint/complexity/noImportantStyles: the only way past an inline style */
+    view-transition-name: none !important;
+  }
+
+  html[data-flipping="next"]::view-transition-old(pair) {
+    animation: 220ms ease-in both flip-out-left;
+  }
+
+  html[data-flipping="next"]::view-transition-new(pair) {
+    animation: 260ms ease-out both flip-in-right;
+  }
+
+  html[data-flipping="prev"]::view-transition-old(pair) {
+    animation: 220ms ease-in both flip-out-right;
+  }
+
+  html[data-flipping="prev"]::view-transition-new(pair) {
+    animation: 260ms ease-out both flip-in-left;
+  }
+}
+
+@keyframes flip-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-12%);
+  }
+}
+
+@keyframes flip-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(12%);
+  }
+}
+
+@keyframes flip-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12%);
+  }
+}
+
+@keyframes flip-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12%);
+  }
+}

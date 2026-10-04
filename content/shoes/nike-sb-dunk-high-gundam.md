@@ -4,6 +4,7 @@ brand: Nike
 year: 2021
 colors: [white, gold]
 status: wish
+photos: [./photos/nike-sb-dunk-high-gundam-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900010261479307
 description:
   en: "Nike SB Dunk High made with Gundam in 2021 for the 15th anniversary of Mobile Suit Gundam Unicorn, with removable V-fin Swooshes."

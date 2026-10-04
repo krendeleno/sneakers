@@ -3,7 +3,9 @@ import { getImage } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import BaseLayout from '@/app/layouts/BaseLayout.astro';
-import { ShoeLabel, SneakerSilhouette, toShoe } from '@/entities/shoe';
+import { ShoeLabel, type ShoeStatus, SneakerSilhouette, toShoe } from '@/entities/shoe';
+import { sortShoes } from '@/features/filter-shoes';
+import { neighbors, PairNav } from '@/features/flip-shoes';
 import { getTranslations, LOCALES, type Locale, langParam } from '@/shared/i18n';
 import {
   Breadcrumb,
@@ -19,17 +21,26 @@ import { ShoeShowcase } from '@/widgets/shoe-showcase';
 export async function getStaticPaths() {
   const entries = await getCollection('shoes');
 
+  // Flip order = the catalog's default: per tab, newest first (same sortShoes as the wall). Names aren't localized.
+  const shoes = entries.map((entry) => toShoe(entry, 'en'));
+  const tab = (status: ShoeStatus) =>
+    sortShoes(
+      shoes.filter((shoe) => shoe.status === status),
+      'newest',
+    ).map(({ id, name }) => ({ id, name }));
+  const tabs: Record<ShoeStatus, { id: string; name: string }[]> = { owned: tab('owned'), wish: tab('wish') };
+
   return LOCALES.flatMap((locale) =>
     entries.map((entry) => ({
       params: { lang: langParam(locale), id: entry.id },
-      props: { entry },
+      props: { entry, nav: neighbors(tabs[entry.data.status], entry.id) },
     })),
   );
 }
 
 const locale = Astro.currentLocale as Locale;
 const t = getTranslations(locale);
-const { entry } = Astro.props;
+const { entry, nav } = Astro.props;
 const shoe = toShoe(entry, locale);
 
 const resize = async (src: ImageMetadata, width?: number) => {
@@ -38,7 +49,7 @@ const resize = async (src: ImageMetadata, width?: number) => {
 };
 
 // Full size: the hero, lightbox, model-viewer poster and og:image. Gallery strip: ~220px wide, 2x.
-// A wish pair may have no pictures yet: a placeholder instead of the gallery, the site's og.png.
+// A pair may have no pictures yet (a wish, or an owned one not yet scanned or photographed): a placeholder instead of the gallery, the site's og.png.
 const images = await Promise.all(
   [entry.data.poster, ...entry.data.photos].filter((src) => src !== undefined).map((src) => resize(src)),
 );
@@ -70,7 +81,7 @@ const isWish = shoe.status === 'wish';
       </BreadcrumbItem>
     </BreadcrumbList>
   </Breadcrumb>
-  <div class="mt-4 grid gap-8 lg:grid-cols-[3fr_2fr]">
+  <div data-pair class="mt-4 grid gap-8 lg:grid-cols-[3fr_2fr]">
     <div>
       {
         shoe.model && poster ? (
@@ -96,4 +107,5 @@ const isWish = shoe.status === 'wish';
       {shoe.credit && <p class="text-xs text-muted-foreground">{shoe.model ? t.modelCredit : t.photoCredit} {shoe.credit}</p>}
     </div>
   </div>
+  {nav && <div class="mt-8 flex justify-center"><PairNav nav={nav} locale={locale} /></div>}
 </BaseLayout>

@@ -4,6 +4,7 @@ brand: Nike
 year: 1982
 colors: [white]
 status: wish
+photos: [./photos/nike-air-force-1-low-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900013635797907
 description:
   en: "Nike's Air Force 1 Low, the 1982 basketball shoe that became a street classic."

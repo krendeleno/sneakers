@@ -36,7 +36,7 @@ type ShoeLabelProps = {
    * lg — the shoe page's info panel: the name is the page heading, "where to buy" is a stamp on it.
    */
   size?: 'sm' | 'lg';
-  /** sm only: the poster thumbnail URL; none = a sneaker silhouette (wish pair without a photo yet) */
+  /** sm only: the poster thumbnail URL; none = a sneaker silhouette (pair without a photo yet) */
   thumb?: string;
   /** sm only: the box is in the first row of the wall, load its thumbnail right away (LCP candidate) */
   priority?: boolean;
@@ -86,7 +86,7 @@ export function ShoeLabel({ shoe, locale, size = 'sm', thumb, priority = false }
             · {MY_PARAMS.footCm} {t.cm}
           </span>
         </span>
-        {lg && shoe.buyUrl && (
+        {lg && shoe.status === 'wish' && shoe.buyUrl && (
           <a href={shoe.buyUrl} target="_blank" rel="noopener noreferrer" className="shoebox-stamp">
             {t.whereToBuy}
           </a>

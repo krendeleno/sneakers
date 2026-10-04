@@ -4,6 +4,7 @@ brand: Nike
 year: 2021
 colors: [white, red, blue]
 status: wish
+photos: [./photos/nike-sb-dunk-high-ishod-wair-magnus-walker-dh7683-100-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900010229151563
 description:
   en: "Ishod Wair's 2021 SB Dunk High, inspired by Magnus Walker's 1971 Porsche 911 “277”."

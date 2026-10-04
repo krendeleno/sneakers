@@ -4,6 +4,7 @@ brand: Converse
 year: 2019
 colors: [red, white]
 status: wish
+photos: [./photos/converse-erx-260-mid-red-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900001772117009
 description:
   en: "Converse's late-'80s-inspired ERX 260 basketball mid in bright red leather."

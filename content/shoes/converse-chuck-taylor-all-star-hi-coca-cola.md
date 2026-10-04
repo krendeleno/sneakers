@@ -4,6 +4,7 @@ brand: Converse
 year: 2025
 colors: [red, white]
 status: wish
+photos: [./photos/converse-chuck-taylor-all-star-hi-coca-cola-1.webp]
 buyUrl: https://www.thepoizon.ru/product/x-8900183342356611
 description:
   en: "Red canvas Chuck Taylor All Star from the 2025 Coca-Cola x Converse collection."

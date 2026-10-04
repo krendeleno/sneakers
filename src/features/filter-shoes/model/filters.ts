@@ -8,18 +8,16 @@ export type ShoeFilters = {
   sort: ShoeSort;
   brands: string[];
   colors: string[];
-  year: number | null;
   query: string;
 };
 
-export type FacetOptions = { brands: string[]; colors: string[]; years: number[] };
+export type FacetOptions = { brands: string[]; colors: string[] };
 
 export const DEFAULT_FILTERS: ShoeFilters = {
   status: 'owned',
   sort: 'newest',
   brands: [],
   colors: [],
-  year: null,
   query: '',
 };
 
@@ -36,7 +34,6 @@ export function applyFilters<T extends Shoe>(shoes: T[], filters: ShoeFilters): 
       shoe.status === filters.status &&
       (filters.brands.length === 0 || filters.brands.includes(shoe.brand)) &&
       (filters.colors.length === 0 || shoe.colors.some((c) => filters.colors.includes(c))) &&
-      (filters.year === null || shoe.year === filters.year) &&
       (query === '' || `${shoe.name} ${shoe.brand}`.toLowerCase().includes(query)),
   );
 }
@@ -100,7 +97,6 @@ export function facetOptions(shoes: Shoe[], status: ShoeStatus): FacetOptions {
   return {
     brands: unique(matching.map((s) => s.brand)).sort(),
     colors: unique(matching.flatMap((s) => s.colors)).sort(),
-    years: unique(matching.map((s) => s.year)).sort((a, b) => b - a),
   };
 }
 
@@ -111,7 +107,6 @@ export function filtersToSearch(filters: ShoeFilters): string {
   if (filters.sort !== DEFAULT_FILTERS.sort) params.set('sort', filters.sort);
   for (const brand of filters.brands) params.append('brand', brand);
   for (const color of filters.colors) params.append('color', color);
-  if (filters.year !== null) params.set('year', String(filters.year));
   if (filters.query) params.set('q', filters.query);
 
   const search = params.toString();
@@ -120,7 +115,6 @@ export function filtersToSearch(filters: ShoeFilters): string {
 
 export function filtersFromSearch(search: string): ShoeFilters {
   const params = new URLSearchParams(search);
-  const year = Number(params.get('year'));
   const sort = SORTS.find((s) => s === params.get('sort'));
 
   return {
@@ -128,7 +122,6 @@ export function filtersFromSearch(search: string): ShoeFilters {
     sort: sort ?? DEFAULT_FILTERS.sort,
     brands: params.getAll('brand'),
     colors: params.getAll('color'),
-    year: Number.isInteger(year) && year > 0 ? year : null,
     query: params.get('q') ?? '',
   };
 }

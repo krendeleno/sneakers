@@ -9,7 +9,7 @@ async function tabCount(page: Page, name: RegExp) {
 test('catalog filters and state goes to the URL', async ({ page }) => {
   await page.goto('./');
 
-  await expect(page.getByRole('heading', { name: 'My collection' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'My collection' })).toBeAttached();
   const cards = page.getByTestId('shoe-card');
   await expect(cards).toHaveCount(await tabCount(page, /Collection/));
 
@@ -28,12 +28,6 @@ test('catalog filters and state goes to the URL', async ({ page }) => {
 
   await nike.click();
   await expect(cards).toHaveCount(wishCount);
-
-  await page.getByRole('combobox', { name: 'Year' }).click();
-  await page.getByRole('option', { name: '1982' }).click();
-  await expect(page).toHaveURL(/year=1982/);
-  await expect(cards.first()).toBeVisible();
-  await expect(cards.filter({ hasNotText: '1982' })).toHaveCount(0);
 });
 
 test('sorting by brand reshelves boxes and goes to the URL', async ({ page }) => {
@@ -70,7 +64,7 @@ test('empty "Next pair?" slot in the collection leads to the wishlist', async ({
 
 test('Russian version under /ru/ and the language switcher', async ({ page }) => {
   await page.goto('./ru/');
-  await expect(page.getByRole('heading', { name: 'Моя коллекция' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Моя коллекция' })).toBeAttached();
   await expect(page.getByRole('link', { name: 'EN' })).toHaveAttribute('href', '/sneakers/');
 });
 
@@ -102,6 +96,16 @@ test('pair without photos: placeholder instead of gallery and a "Where to buy" l
   await expect(page.getByTestId('photo-placeholder')).toContainText('Photo coming soon');
   await expect(page.getByRole('link', { name: 'Where to buy' })).toHaveAttribute('href', /thepoizon\.ru/);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /og\.png$/);
+});
+
+test('owned pair without a model: placeholder, no 3D viewer, no "Where to buy"', async ({ page }) => {
+  await page.goto('./shoes/owned-no-model/');
+  await expect(page.getByTestId('photo-placeholder')).toContainText('Photo coming soon');
+  await expect(page.locator('model-viewer')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Where to buy' })).toHaveCount(0);
+  await expect(
+    page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Collection' }),
+  ).toBeVisible();
 });
 
 test('breadcrumb and Back return to the catalog with the same filters', async ({ page }) => {
@@ -159,4 +163,42 @@ test('filtered URL: catalog does not flash the default tab', async ({ page }) =>
 
   await page.goto('./?status=wish&brand=Nike');
   await expect(page.locator('html')).toHaveAttribute('data-first-tab', /^Wishlist/);
+});
+
+test('flipping between pairs: arrows, keyboard, disabled edges', async ({ page }) => {
+  await page.goto('./shoes/wish-no-photo/');
+
+  const nav = page.getByRole('navigation', { name: 'Pairs' });
+  await expect(nav.getByTestId('pair-counter')).toHaveText('2 / 4');
+
+  await nav.getByRole('link', { name: /^Next pair/ }).click();
+  await expect(page).toHaveURL(/shoes\/wish-photos\/$/);
+  await expect(nav.getByTestId('pair-counter')).toHaveText('3 / 4');
+
+  await page.keyboard.press('ArrowRight');
+  await expect(page).toHaveURL(/shoes\/wish-nike-1982\/$/);
+
+  // Last pair: "next" is not a link.
+  await expect(nav.getByRole('link', { name: /^Next pair/ })).toHaveCount(0);
+
+  await nav.getByRole('link', { name: /^Previous pair/ }).click();
+  await expect(page).toHaveURL(/shoes\/wish-photos\/$/);
+});
+
+test('flipping stays within the tab: collection pairs, newest first', async ({ page }) => {
+  await page.goto('./shoes/owned-3d/');
+
+  const nav = page.getByRole('navigation', { name: 'Pairs' });
+  await expect(nav.getByTestId('pair-counter')).toHaveText('1 / 2');
+  await expect(nav.getByRole('link', { name: /^Previous pair/ })).toHaveCount(0);
+
+  await nav.getByRole('link', { name: /^Next pair/ }).click();
+  await expect(page).toHaveURL(/shoes\/owned-no-model\/$/);
+  await expect(nav.getByTestId('pair-counter')).toHaveText('2 / 2');
+  await expect(nav.getByRole('link', { name: /^Next pair/ })).toHaveCount(0);
+});
+
+test('footer notes where the images come from', async ({ page }) => {
+  await page.goto('./ru/');
+  await expect(page.getByTestId('images-note')).toContainText('сгенерированы ИИ');
 });
